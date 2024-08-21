@@ -12,32 +12,10 @@
 import AppKit
 import SwiftUI
 
-public struct HighlightedTextEditor: NSViewRepresentable, HighlightingTextEditor {
+extension HighlightedTextEditor: NSViewRepresentable {
     public struct Internals {
         public let textView: SystemTextView
         public let scrollView: SystemScrollView?
-    }
-
-    @Binding var text: String {
-        didSet {
-            onTextChange?(text)
-        }
-    }
-
-    let highlightRules: [HighlightRule]
-
-    private(set) var onEditingChanged: OnEditingChangedCallback?
-    private(set) var onCommit: OnCommitCallback?
-    private(set) var onTextChange: OnTextChangeCallback?
-    private(set) var onSelectionChange: OnSelectionChangeCallback?
-    private(set) var introspect: IntrospectCallback?
-
-    public init(
-        text: Binding<String>,
-        highlightRules: [HighlightRule]
-    ) {
-        _text = text
-        self.highlightRules = highlightRules
     }
 
     public func makeCoordinator() -> Coordinator {
@@ -56,7 +34,8 @@ public struct HighlightedTextEditor: NSViewRepresentable, HighlightingTextEditor
         let typingAttributes = view.textView.typingAttributes
 
         let highlightedText = HighlightedTextEditor.getHighlightedText(
-            text: text,
+            text: text, 
+            defaults: textDefaults,
             highlightRules: highlightRules
         )
 
@@ -237,42 +216,14 @@ public extension HighlightedTextEditor {
 }
 
 public extension HighlightedTextEditor {
-    func introspect(callback: @escaping IntrospectCallback) -> Self {
+    func setDefaultFont(_ font: NSFont) -> Self {
         var editor = self
-        editor.introspect = callback
+        editor.textDefaults.font = font
         return editor
     }
-
-    func onCommit(_ callback: @escaping OnCommitCallback) -> Self {
+    func setDefaultTextColor(_ color: NSColor) -> Self {
         var editor = self
-        editor.onCommit = callback
-        return editor
-    }
-
-    func onEditingChanged(_ callback: @escaping OnEditingChangedCallback) -> Self {
-        var editor = self
-        editor.onEditingChanged = callback
-        return editor
-    }
-
-    func onTextChange(_ callback: @escaping OnTextChangeCallback) -> Self {
-        var editor = self
-        editor.onTextChange = callback
-        return editor
-    }
-
-    func onSelectionChange(_ callback: @escaping OnSelectionChangeCallback) -> Self {
-        var editor = self
-        editor.onSelectionChange = callback
-        return editor
-    }
-
-    func onSelectionChange(_ callback: @escaping (_ selectedRange: NSRange) -> Void) -> Self {
-        var editor = self
-        editor.onSelectionChange = { ranges in
-            guard let range = ranges.first else { return }
-            callback(range)
-        }
+        editor.textDefaults.textColor = color
         return editor
     }
 }

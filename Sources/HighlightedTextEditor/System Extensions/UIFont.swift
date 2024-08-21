@@ -6,7 +6,7 @@
 //  Based on NSFont extension by Maksymilian Wojakowski
 //
 
-#if os(iOS)
+#if os(iOS) || os(visionOS)
 import Foundation
 import UIKit
 

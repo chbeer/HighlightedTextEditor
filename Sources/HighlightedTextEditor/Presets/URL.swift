@@ -17,7 +17,7 @@ public extension Sequence where Iterator.Element == HighlightRule {
         [
             HighlightRule(pattern: _urlRegex, formattingRules: [
                 TextFormattingRule(key: .underlineStyle, value: NSUnderlineStyle.single.rawValue),
-                TextFormattingRule(key: .link) { urlString, _ in
+                TextFormattingRule(key: .link) { urlString, _, _ in
                     URL(string: urlString) as Any
                 }
             ])

@@ -63,11 +63,11 @@ public extension Sequence where Iterator.Element == HighlightRule {
             HighlightRule(pattern: headingRegex, formattingRules: [
                 TextFormattingRule(fontTraits: headingTraits),
                 TextFormattingRule(key: .kern, value: 0.5),
-                TextFormattingRule(key: .font, calculateValue: { content, _ in
+                TextFormattingRule(key: .font, calculateValue: { content, defaults, _ in
                     let uncappedLevel = content.prefix(while: { char in char == "#" }).count
                     let level = Swift.min(maxHeadingLevel, uncappedLevel)
-                    let fontSize = CGFloat(maxHeadingLevel - level) * 2.5 + defaultEditorFont.pointSize
-                    return SystemFontAlias(descriptor: defaultEditorFont.fontDescriptor, size: fontSize) as Any
+                    let fontSize = CGFloat(maxHeadingLevel - level) * 2.5 + defaults.font.pointSize
+                    return SystemFontAlias(descriptor: defaults.font.fontDescriptor, size: fontSize) as Any
                 })
             ]),
             HighlightRule(

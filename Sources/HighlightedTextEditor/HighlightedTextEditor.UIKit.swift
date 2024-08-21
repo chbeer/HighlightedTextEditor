@@ -1,4 +1,4 @@
-#if os(iOS)
+#if os(iOS) || os(visionOS)
 //
 //  HighlightedTextEditor.UIKit.swift
 //
@@ -9,32 +9,10 @@
 import SwiftUI
 import UIKit
 
-public struct HighlightedTextEditor: UIViewRepresentable, HighlightingTextEditor {
+extension HighlightedTextEditor: UIViewRepresentable {
     public struct Internals {
         public let textView: SystemTextView
         public let scrollView: SystemScrollView?
-    }
-
-    @Binding var text: String {
-        didSet {
-            onTextChange?(text)
-        }
-    }
-
-    let highlightRules: [HighlightRule]
-
-    private(set) var onEditingChanged: OnEditingChangedCallback?
-    private(set) var onCommit: OnCommitCallback?
-    private(set) var onTextChange: OnTextChangeCallback?
-    private(set) var onSelectionChange: OnSelectionChangeCallback?
-    private(set) var introspect: IntrospectCallback?
-
-    public init(
-        text: Binding<String>,
-        highlightRules: [HighlightRule]
-    ) {
-        _text = text
-        self.highlightRules = highlightRules
     }
 
     public func makeCoordinator() -> Coordinator {
@@ -55,6 +33,7 @@ public struct HighlightedTextEditor: UIViewRepresentable, HighlightingTextEditor
 
         let highlightedText = HighlightedTextEditor.getHighlightedText(
             text: text,
+            defaults: textDefaults,
             highlightRules: highlightRules
         )
 
@@ -65,7 +44,7 @@ public struct HighlightedTextEditor: UIViewRepresentable, HighlightingTextEditor
         }
         updateTextViewModifiers(uiView)
         runIntrospect(uiView)
-        uiView.isScrollEnabled = true
+//        uiView.isScrollEnabled = true
         uiView.selectedTextRange = context.coordinator.selectedTextRange
         context.coordinator.updatingUIView = false
     }
@@ -118,37 +97,15 @@ public struct HighlightedTextEditor: UIViewRepresentable, HighlightingTextEditor
 }
 
 public extension HighlightedTextEditor {
-    func introspect(callback: @escaping IntrospectCallback) -> Self {
-        var new = self
-        new.introspect = callback
-        return new
+    func setDefaultFont(_ font: UIFont) -> Self {
+        var editor = self
+        editor.textDefaults.font = font
+        return editor
     }
-
-    func onSelectionChange(_ callback: @escaping (_ selectedRange: NSRange) -> Void) -> Self {
-        var new = self
-        new.onSelectionChange = { ranges in
-            guard let range = ranges.first else { return }
-            callback(range)
-        }
-        return new
-    }
-
-    func onCommit(_ callback: @escaping OnCommitCallback) -> Self {
-        var new = self
-        new.onCommit = callback
-        return new
-    }
-
-    func onEditingChanged(_ callback: @escaping OnEditingChangedCallback) -> Self {
-        var new = self
-        new.onEditingChanged = callback
-        return new
-    }
-
-    func onTextChange(_ callback: @escaping OnTextChangeCallback) -> Self {
-        var new = self
-        new.onTextChange = callback
-        return new
+    func setDefaultTextColor(_ color: UIColor) -> Self {
+        var editor = self
+        editor.textDefaults.textColor = color
+        return editor
     }
 }
 #endif

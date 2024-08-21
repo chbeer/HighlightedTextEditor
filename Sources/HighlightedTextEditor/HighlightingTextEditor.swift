@@ -16,8 +16,10 @@ public typealias SymbolicTraits = NSFontDescriptor.SymbolicTraits
 public typealias SystemTextView = NSTextView
 public typealias SystemScrollView = NSScrollView
 
-let defaultEditorFont = NSFont.systemFont(ofSize: NSFont.systemFontSize)
-let defaultEditorTextColor = NSColor.labelColor
+public struct TextDefaults {
+    var font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
+    var textColor = NSColor.labelColor
+}
 
 #else
 import UIKit
@@ -28,13 +30,15 @@ public typealias SymbolicTraits = UIFontDescriptor.SymbolicTraits
 public typealias SystemTextView = UITextView
 public typealias SystemScrollView = UIScrollView
 
-let defaultEditorFont = UIFont.preferredFont(forTextStyle: .body)
-let defaultEditorTextColor = UIColor.label
+public struct TextDefaults {
+    var font = UIFont.preferredFont(forTextStyle: .body)
+    var textColor = UIColor.label
+}
 
 #endif
 
 public struct TextFormattingRule {
-    public typealias AttributedKeyCallback = (String, Range<String.Index>) -> Any
+    public typealias AttributedKeyCallback = (String, TextDefaults, Range<String.Index>) -> Any
 
     let key: NSAttributedString.Key?
     let calculateValue: AttributedKeyCallback?
@@ -43,7 +47,7 @@ public struct TextFormattingRule {
     // ------------------- convenience ------------------------
 
     public init(key: NSAttributedString.Key, value: Any) {
-        self.init(key: key, calculateValue: { _, _ in value }, fontTraits: [])
+        self.init(key: key, calculateValue: { _, _, _ in value }, fontTraits: [])
     }
 
     public init(key: NSAttributedString.Key, calculateValue: @escaping AttributedKeyCallback) {
@@ -86,11 +90,6 @@ public struct HighlightRule {
     }
 }
 
-internal protocol HighlightingTextEditor {
-    var text: String { get set }
-    var highlightRules: [HighlightRule] { get }
-}
-
 public typealias OnSelectionChangeCallback = ([NSRange]) -> Void
 public typealias IntrospectCallback = (_ editor: HighlightedTextEditor.Internals) -> Void
 public typealias EmptyCallback = () -> Void
@@ -98,15 +97,40 @@ public typealias OnCommitCallback = EmptyCallback
 public typealias OnEditingChangedCallback = EmptyCallback
 public typealias OnTextChangeCallback = (_ editorContent: String) -> Void
 
-extension HighlightingTextEditor {
+public struct HighlightedTextEditor {
+    
+    public var textDefaults = TextDefaults()
+
     var placeholderFont: SystemColorAlias { SystemColorAlias() }
 
-    static func getHighlightedText(text: String, highlightRules: [HighlightRule]) -> NSMutableAttributedString {
-        let highlightedString = NSMutableAttributedString(string: text)
-        let all = NSRange(location: 0, length: text.utf16.count)
+    @Binding var text: String {
+        didSet {
+            onTextChange?(text)
+        }
+    }
 
-        let editorFont = defaultEditorFont
-        let editorTextColor = defaultEditorTextColor
+    let highlightRules: [HighlightRule]
+
+    private(set) var onEditingChanged: OnEditingChangedCallback?
+    private(set) var onCommit: OnCommitCallback?
+    private(set) var onTextChange: OnTextChangeCallback?
+    private(set) var onSelectionChange: OnSelectionChangeCallback?
+    private(set) var introspect: IntrospectCallback?
+    
+    public init(
+        text: Binding<String>,
+        highlightRules: [HighlightRule]
+    ) {
+        _text = text
+        self.highlightRules = highlightRules
+    }
+
+    static func getHighlightedText(text: String, defaults: TextDefaults, highlightRules: [HighlightRule]) -> NSMutableAttributedString {
+        let highlightedString = NSMutableAttributedString(string: text)
+        let all = NSRange(text.startIndex..<text.endIndex, in: text)
+
+        let editorFont = defaults.font
+        let editorTextColor = defaults.textColor
 
         highlightedString.addAttribute(.font, value: editorFont, range: all)
         highlightedString.addAttribute(.foregroundColor, value: editorTextColor, range: all)
@@ -131,7 +155,7 @@ extension HighlightingTextEditor {
                           let calculateValue = formattingRule.calculateValue else { return }
                     highlightedString.addAttribute(
                         key,
-                        value: calculateValue(matchContent, matchRange),
+                        value: calculateValue(matchContent, defaults, matchRange),
                         range: match.range
                     )
                 }
@@ -139,5 +163,46 @@ extension HighlightingTextEditor {
         }
 
         return highlightedString
+    }
+}
+
+public extension HighlightedTextEditor {
+    func introspect(callback: @escaping IntrospectCallback) -> Self {
+        var editor = self
+        editor.introspect = callback
+        return editor
+    }
+
+    func onCommit(_ callback: @escaping OnCommitCallback) -> Self {
+        var editor = self
+        editor.onCommit = callback
+        return editor
+    }
+
+    func onEditingChanged(_ callback: @escaping OnEditingChangedCallback) -> Self {
+        var editor = self
+        editor.onEditingChanged = callback
+        return editor
+    }
+
+    func onTextChange(_ callback: @escaping OnTextChangeCallback) -> Self {
+        var editor = self
+        editor.onTextChange = callback
+        return editor
+    }
+
+    func onSelectionChange(_ callback: @escaping OnSelectionChangeCallback) -> Self {
+        var editor = self
+        editor.onSelectionChange = callback
+        return editor
+    }
+
+    func onSelectionChange(_ callback: @escaping (_ selectedRange: NSRange) -> Void) -> Self {
+        var editor = self
+        editor.onSelectionChange = { ranges in
+            guard let range = ranges.first else { return }
+            callback(range)
+        }
+        return editor
     }
 }
