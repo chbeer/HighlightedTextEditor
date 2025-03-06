@@ -108,6 +108,19 @@ public extension HighlightedTextEditor {
             parent.text = textView.string
             parent.onCommit?()
         }
+        
+    public func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+            switch commandSelector {
+            case #selector(NSResponder.insertTab(_:)):
+                textView.window?.selectNextKeyView(nil)
+                return true
+            case #selector(NSResponder.insertBacktab(_:)):
+                textView.window?.selectPreviousKeyView(nil)
+                return true
+            default:
+                return false
+            }
+        }
     }
 }
 
