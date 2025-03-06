@@ -5,7 +5,7 @@
 //  Created by Kyle Nazario on 11/13/20.
 //
 
-#if os(iOS) || os(visionOS)
+#if os(iOS) || os(visionOS) || os(tvOS)
 import Foundation
 import UIKit
 

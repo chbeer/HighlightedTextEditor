@@ -1,4 +1,4 @@
-#if os(iOS) || os(visionOS)
+#if os(iOS) || os(visionOS) || os(tvOS)
 //
 //  HighlightedTextEditor.UIKit.swift
 //

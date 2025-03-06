@@ -43,12 +43,16 @@ let secondaryBackground = NSColor.windowBackgroundColor
 let lighterColor = NSColor.lightGray
 let textColor = NSColor.labelColor
 #else
-let codeFont = UIFont.monospacedSystemFont(ofSize: UIFont.systemFontSize, weight: .thin)
+let codeFont = UIFont.monospacedSystemFont(ofSize: UIFont.preferredFont(forTextStyle: .body).pointSize, weight: .thin)
 let headingTraits: UIFontDescriptor.SymbolicTraits = [.traitBold, .traitExpanded]
 let boldTraits: UIFontDescriptor.SymbolicTraits = [.traitBold]
 let emphasisTraits: UIFontDescriptor.SymbolicTraits = [.traitItalic]
 let boldEmphasisTraits: UIFontDescriptor.SymbolicTraits = [.traitBold, .traitItalic]
+#if os(tvOS)
+let secondaryBackground = UIColor.clear
+#else
 let secondaryBackground = UIColor.secondarySystemBackground
+#endif
 let lighterColor = UIColor.lightGray
 let textColor = UIColor.label
 #endif
